@@ -2,11 +2,11 @@ version: '3.8'
 
 services:
   1a-eureka-server:
-    #build:
-     # context: .  # Use the current directory as the build context
+    # Uncomment this if you want to build from a local Dockerfile
+    # build: ./path-to-eureka-service
     image: my-eureka-image:latest
     ports:
-      - "8761:8761"  # Map container port 7000 to host port 7000
+      - "8761:8761"  # Map container port 8761 to host port 8761
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
@@ -14,37 +14,41 @@ services:
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - SPRING_PROFILES_ACTIVE=dev
     depends_on:
-      - db  # This ensures that the product service starts after the DB container
+      - db  # This ensures that db starts before eureka server
 
   db:
-    image: postgres:13  # Use the official PostgreSQL 13 image
+    image: postgres:13
     container_name: postgres-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
     ports:
-      - "5432:5432"  # Expose the PostgreSQL port
+      - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data  # Persist DB data between restarts
+      - postgres-data:/var/lib/postgresql/data  # Persist DB data across restarts
+    networks:
+      - my-network
 
   hm-patient-service:
-    image: patient-image:latest  # Change this to the image you use for your patient service
+    image: patient-image:latest  # Change this to the actual image name for your patient service
     ports:
       - "9093:9093"  # Map the container port to a host port
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_EUREKA_SERVER_URL=http://1a-eureka-server:8200/eureka  # Eureka server URL
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres  # Database connection URL
+      - SPRING_EUREKA_SERVER_URL=http://1a-eureka-server:8761/eureka  # Eureka server URL (update port)
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
     depends_on:
-      - 1a-eureka-server  # Ensure the Eureka server starts before hm-patient-service
+      - 1a-eureka-server  # Ensure Eureka server starts before hm-patient-service
       - db  # Ensure the database is available before hm-patient-service starts
     networks:
-      - my-network 
-
-	
+      - my-network
 
 volumes:
   postgres-data:  # Define a volume to persist database data
+
+networks:
+  my-network:  # Define the custom network
+    driver: bridge
