@@ -1,7 +1,7 @@
 FROM openjdk:17-jdk-alpine
 
 MAINTAINER "Ashu"
-EXPOSE 7000
+EXPOSE 9093
 
 # Copy the JAR file from the host to the container, assuming the JAR is located in ./target/
 COPY ./target/patient-service.jar patient-service.jar
